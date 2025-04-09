@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Polynomial Regression Predictor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+      }
+      label,
+      select,
+      input,
+      button {
+        display: block;
+        margin-top: 10px;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        width: fit-content;
+      }
+      img {
+        margin-top: 20px;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🐂 Bull Demand Predictor</h1>
+    <form id="predictForm">
+      <label for="feature">Select Feature (X):</label>
+      <select id="feature" name="feature">
+        {% for col in columns %}
+        <option value="{{ col }}">{{ col }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="target">Select Target (Y):</label>
+      <select id="target" name="target">
+        {% for col in columns %}
+        <option value="{{ col }}">{{ col }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="degree">Polynomial Degree:</label>
+      <input
+        type="number"
+        id="degree"
+        name="degree"
+        value="2"
+        min="1"
+        required
+      />
+
+      <label for="value">Value to Predict For:</label>
+      <input type="number" id="value" name="value" required />
+
+      <button type="submit">Predict</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <h2>Regression Plot</h2>
+    <!-- This image will show the current regression curve -->
+    <img
+      id="regressionPlot"
+      src="/plot?feature=YEAR&target=QLD_total&degree=2"
+      alt="Regression Plot"
+      style="max-width: 100%; height: auto"
+    />
+
+    <script>
+      const form = document.getElementById("predictForm");
+      const resultDiv = document.getElementById("result");
+      const regressionPlot = document.getElementById("regressionPlot");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const feature = form.feature.value;
+        const target = form.target.value;
+        const degree = form.degree.value;
+        const value = form.value.value;
+
+        // Fetch prediction JSON
+        const res = await fetch(
+          `/predict?feature=${feature}&target=${target}&degree=${degree}&value=${value}`
+        );
+        const data = await res.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+        } else {
+          resultDiv.innerHTML = `
+          <strong>Prediction:</strong> ${data.predicted_value}<br>
+          <strong>R² Score:</strong> ${data.test_score_r2}<br>
+          <strong>Model:</strong> Degree ${data.degree} on ${data.feature_column} → ${data.target_column}
+        `;
+          // Update the regression plot image based on the selected parameters.
+          regressionPlot.src = `/plot?feature=${feature}&target=${target}&degree=${degree}`;
+        }
+      });
+    </script>
+  </body>
+</html>
